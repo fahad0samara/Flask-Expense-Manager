@@ -1,7 +1,11 @@
-# Splitwise Clone
+# ExpenseTracker-Pro
 
 ## Overview
 A comprehensive web application for tracking shared expenses and managing group finances. This application helps users split bills, track expenses, analyze spending patterns, and manage budgets effectively.
+
+
+![screencapture-localhost-5000-2024-11-24-12_36_24](https://github.com/user-attachments/assets/6bba2033-3e04-445d-8fe9-b7f51848eccf)
+
 
 ## Features
 
@@ -136,8 +140,6 @@ splitwise/
 3. Make your changes
 4. Submit a pull request
 
-## License
-This project is licensed under the MIT License.
 
 ## Acknowledgments
 - Inspired by the original Splitwise application
