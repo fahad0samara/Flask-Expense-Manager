@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 from flask_bcrypt import Bcrypt
 from flask_migrate import Migrate
 from config import Config
@@ -29,15 +29,25 @@ def create_app(config_class=Config):
         from app.models import User, Expense, ExpenseCategory, ExpenseSplit, Group, GroupMembership, Settlement
         
         # Register blueprints
-        from app.routes import auth_bp, main_bp, profile_bp, expense_bp, group_bp, settlement_bp, analytics_bp
+        from app.routes import auth, main, profile, group, expense, settlement, category, stats, reports
+        from app.routes.budget_analytics import bp as budget_analytics_bp
         
-        app.register_blueprint(auth_bp, url_prefix='/auth')
-        app.register_blueprint(main_bp)
-        app.register_blueprint(profile_bp, url_prefix='/profile')
-        app.register_blueprint(expense_bp, url_prefix='/expenses')
-        app.register_blueprint(group_bp, url_prefix='/groups')
-        app.register_blueprint(settlement_bp, url_prefix='/settlements')
-        app.register_blueprint(analytics_bp, url_prefix='/analytics')
+        app.register_blueprint(auth.bp)
+        app.register_blueprint(main.bp)  # Main blueprint for index and dashboard
+        app.register_blueprint(profile.bp, url_prefix='/profile')  # Profile blueprint
+        app.register_blueprint(group.bp, url_prefix='/groups')
+        app.register_blueprint(expense.bp, url_prefix='/expenses')
+        app.register_blueprint(settlement.bp, url_prefix='/settlements')
+        app.register_blueprint(category.bp, url_prefix='/categories')
+        app.register_blueprint(stats.bp, url_prefix='/stats')  # Stats blueprint
+        app.register_blueprint(reports.bp, url_prefix='/reports')  # Reports blueprint
+        app.register_blueprint(budget_analytics_bp, url_prefix='/budget-analytics')  # Budget Analytics blueprint
+        
+        # Track user activity
+        @app.before_request
+        def before_request():
+            if current_user.is_authenticated:
+                current_user.update_last_active()
         
         # Create database tables
         db.create_all()

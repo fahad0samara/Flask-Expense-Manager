@@ -33,36 +33,51 @@
                             <select class="form-select" id="category" name="category" required>
                                 <option value="">Select a category</option>
                                 {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                <option value="{{ category.id }}" data-color="{{ category.color }}" data-icon="{{ category.icon }}">
+                                    {% if category.icon %}
+                                    <i class="fas {{ category.icon }}"></i>
+                                    {% endif %}
+                                    {{ category.name }}
+                                </option>
                                 {% endfor %}
                             </select>
+                            <div class="mt-2">
+                                <a href="{{ url_for('category.add_category') }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-plus"></i> Add New Category
+                                </a>
+                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="group" class="form-label">Group</label>
                             <select class="form-select" id="group" name="group" required {% if selected_group_id %}disabled{% endif %}>
                                 <option value="">Select a group</option>
-                                {% for group_id in groups %}
-                                <option value="{{ group_id }}" {% if group_id == selected_group_id %}selected{% endif %}>{{ group_id }}</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}" {% if group.id == selected_group_id %}selected{% endif %}>
+                                    {{ group.name }}
+                                </option>
                                 {% endfor %}
                             </select>
-                            {% if selected_group_id %}
-                            <input type="hidden" name="group" value="{{ selected_group_id }}">
-                            {% endif %}
                         </div>
 
                         <div class="mb-3">
                             <label for="split_type" class="form-label">Split Type</label>
                             <select class="form-select" id="split_type" name="split_type" required>
-                                <option value="equal">Split Equally</option>
-                                <option value="exact" disabled>Exact Amounts (Coming Soon)</option>
-                                <option value="percent" disabled>By Percentage (Coming Soon)</option>
+                                <option value="equal">Equal Split</option>
+                                <option value="percentage">Split by Percentage</option>
+                                <option value="shares">Split by Shares</option>
+                                <option value="exact">Split by Exact Amounts</option>
                             </select>
+                        </div>
+
+                        <div id="split-details" class="mb-3" style="display: none;">
+                            <!-- This section will be populated dynamically based on split type -->
                         </div>
 
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">Add Expense</button>
-                            <a href="{{ url_for('expense.view_expenses', group_id=selected_group_id) if selected_group_id else url_for('expense.view_expenses') }}" class="btn btn-outline-secondary">Cancel</a>
+                            <a href="{{ url_for('group.view_group', group_id=selected_group_id) if selected_group_id else url_for('main.dashboard') }}" 
+                               class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -70,4 +85,105 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const splitTypeSelect = document.getElementById('split_type');
+    const splitDetailsDiv = document.getElementById('split-details');
+    const groupSelect = document.getElementById('group');
+    
+    function updateSplitDetails() {
+        const splitType = splitTypeSelect.value;
+        const groupId = groupSelect.value;
+        
+        if (!groupId) {
+            splitDetailsDiv.style.display = 'none';
+            return;
+        }
+        
+        // Fetch group members and update split details
+        fetch(`/api/group/${groupId}/members`)
+            .then(response => response.json())
+            .then(members => {
+                let html = '<div class="card"><div class="card-body">';
+                
+                switch(splitType) {
+                    case 'equal':
+                        html += `<p>The amount will be split equally between ${members.length} members.</p>`;
+                        break;
+                        
+                    case 'percentage':
+                        html += '<div class="row g-3">';
+                        members.forEach(member => {
+                            html += `
+                                <div class="col-md-6">
+                                    <label class="form-label">${member.name}</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" 
+                                               name="percentage_${member.id}" 
+                                               min="0" max="100" step="0.01" 
+                                               value="${100/members.length}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>`;
+                        });
+                        html += '</div>';
+                        break;
+                        
+                    case 'shares':
+                        html += '<div class="row g-3">';
+                        members.forEach(member => {
+                            html += `
+                                <div class="col-md-6">
+                                    <label class="form-label">${member.name}</label>
+                                    <input type="number" class="form-control" 
+                                           name="shares_${member.id}" 
+                                           min="0" step="1" value="1">
+                                </div>`;
+                        });
+                        html += '</div>';
+                        break;
+                        
+                    case 'exact':
+                        html += '<div class="row g-3">';
+                        members.forEach(member => {
+                            html += `
+                                <div class="col-md-6">
+                                    <label class="form-label">${member.name}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" 
+                                               name="amount_${member.id}" 
+                                               min="0" step="0.01" value="0">
+                                    </div>
+                                </div>`;
+                        });
+                        html += '</div>';
+                        break;
+                }
+                
+                html += '</div></div>';
+                splitDetailsDiv.innerHTML = html;
+                splitDetailsDiv.style.display = 'block';
+            });
+    }
+    
+    splitTypeSelect.addEventListener('change', updateSplitDetails);
+    groupSelect.addEventListener('change', updateSplitDetails);
+    
+    // Initialize category select styling
+    const categorySelect = document.getElementById('category');
+    categorySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const color = selectedOption.dataset.color;
+        const icon = selectedOption.dataset.icon;
+        
+        if (color) {
+            this.style.borderColor = color;
+        }
+    });
+});
+</script>
 {% endblock %}

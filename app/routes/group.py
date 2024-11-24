@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app.models import db, Group, GroupMembership, User
 from datetime import datetime
@@ -108,3 +108,21 @@ def remove_member(group_id, user_id):
     
     flash('Member removed successfully!', 'success')
     return redirect(url_for('group.view_group', group_id=group.id))
+
+@bp.route('/api/group/<int:group_id>/members')
+@login_required
+def get_group_members(group_id):
+    group = Group.query.get_or_404(group_id)
+    if not any(member.user_id == current_user.id for member in group.members):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    members = []
+    for membership in group.members:
+        user = membership.user
+        members.append({
+            'id': user.id,
+            'name': user.full_name or user.username,
+            'email': user.email
+        })
+    
+    return jsonify(members)

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Spending Statistics</h2>
+    
+    <div class="row">
+        <!-- Monthly Spending Trend -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Monthly Spending Trend</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="spendingTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Breakdown -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Spending by Category</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for activity in recent_activity %}
+                            <div class="list-group-item">
+                                {% if activity.__class__.__name__ == 'Expense' %}
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ activity.title }}</h6>
+                                        <small>${{ "%.2f"|format(activity.amount) }}</small>
+                                    </div>
+                                    <p class="mb-1">Paid by {{ activity.payer.username }}</p>
+                                    <small>{{ activity.date.strftime('%B %d, %Y') }}</small>
+                                {% else %}
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Settlement</h6>
+                                        <small>${{ "%.2f"|format(activity.amount) }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ activity.payer.username }} → {{ activity.receiver.username }}</p>
+                                    <small>{{ activity.date.strftime('%B %d, %Y') }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Monthly Spending Trend Chart
+    const trendCtx = document.getElementById('spendingTrendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Monthly Spending',
+                data: {{ spending_trend|safe }},
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Pie Chart
+    const pieCtx = document.getElementById('categoryPieChart').getContext('2d');
+    new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ category_labels|safe }},
+            datasets: [{
+                data: {{ category_values|safe }},
+                backgroundColor: [
+                    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                    '#858796', '#5a5c69', '#2e59d9', '#17a673', '#2c9faf'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                title: {
+                    display: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

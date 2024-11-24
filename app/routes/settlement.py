@@ -29,7 +29,7 @@ def group_settlements(group_id):
         # Amount others owe to user
         owed_to = db.session.query(db.func.sum(ExpenseSplit.amount)).filter(
             ExpenseSplit.expense.has(
-                and_(Group.id == group_id, Group.created_by == member.id)
+                and_(Group.id == group_id, Group.creator_id == member.id)
             )
         ).scalar() or 0
         

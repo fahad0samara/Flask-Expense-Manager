@@ -3,6 +3,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models.user import User
 from email_validator import validate_email, EmailNotValidError
+from urllib.parse import urlparse
 
 bp = Blueprint('auth', __name__)
 
@@ -53,15 +54,22 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        remember = request.form.get('remember', False) == 'on'
         
         user = User.query.filter_by(username=username).first()
         
         if user and user.check_password(password):
-            login_user(user)
-            flash('Login successful!', 'success')
-            return redirect(url_for('main.dashboard'))
-        else:
-            flash('Invalid username or password.', 'error')
+            login_user(user, remember=remember)
+            user.record_login()  # Record login activity
+            
+            next_page = request.args.get('next')
+            if not next_page or urlparse(next_page).netloc != '':
+                next_page = url_for('main.dashboard')
+                
+            flash('Logged in successfully!', 'success')
+            return redirect(next_page)
+        
+        flash('Invalid username or password.', 'error')
     
     return render_template('auth/login.html')
 

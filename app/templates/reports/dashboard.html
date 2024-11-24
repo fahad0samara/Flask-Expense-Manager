@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Expense Reports{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .report-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .metric-label {
+        font-size: 14px;
+        color: #7f8c8d;
+    }
+    .top-spender {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .forecast-section {
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Expense Reports & Analytics</h1>
+    
+    <div class="row">
+        <!-- Monthly Trend Chart -->
+        <div class="col-md-8">
+            <div class="report-card">
+                <h3>Monthly Spending Trend</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Distribution -->
+        <div class="col-md-4">
+            <div class="report-card">
+                <h3>Category Distribution</h3>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Top Spenders -->
+        <div class="col-md-6">
+            <div class="report-card">
+                <h3>Top Spenders This Month</h3>
+                <div id="topSpendersList">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Expense Forecast -->
+        <div class="col-md-6">
+            <div class="report-card">
+                <h3>Expense Forecast</h3>
+                <div class="forecast-section">
+                    <div class="mb-4">
+                        <div class="metric-label">Daily Average Spending</div>
+                        <div class="metric-value" id="dailyAverage">$0.00</div>
+                    </div>
+                    <div>
+                        <div class="metric-label">Projected Monthly Expense</div>
+                        <div class="metric-value" id="monthlyForecast">$0.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Monthly Trend Chart
+    fetch('/reports/monthly-trend')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(item => item.month),
+                    datasets: [{
+                        label: 'Monthly Spending',
+                        data: data.map(item => item.total),
+                        borderColor: '#3498db',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+
+    // Category Distribution Chart
+    fetch('/reports/category-analysis')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.category),
+                    datasets: [{
+                        data: data.map(item => item.total),
+                        backgroundColor: [
+                            '#2ecc71', '#3498db', '#9b59b6', '#e74c3c', '#f1c40f',
+                            '#1abc9c', '#34495e', '#e67e22', '#95a5a6', '#16a085'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        });
+
+    // Top Spenders List
+    fetch('/reports/top-spenders')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('topSpendersList');
+            data.forEach((spender, index) => {
+                const div = document.createElement('div');
+                div.className = 'top-spender';
+                div.innerHTML = `
+                    <span>#${index + 1} ${spender.username}</span>
+                    <span>$${spender.total.toFixed(2)}</span>
+                `;
+                container.appendChild(div);
+            });
+        });
+
+    // Expense Forecast
+    fetch('/reports/expense-forecast')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('dailyAverage').textContent = 
+                `$${data.daily_average.toFixed(2)}`;
+            document.getElementById('monthlyForecast').textContent = 
+                `$${data.monthly_forecast.toFixed(2)}`;
+        });
+});
+</script>
+{% endblock %}

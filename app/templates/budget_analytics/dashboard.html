@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Budget Analytics{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css">
+<style>
+    .analytics-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.2s;
+    }
+    .analytics-card:hover {
+        transform: translateY(-2px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .metric {
+        text-align: center;
+        padding: 15px;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+    .metric-label {
+        font-size: 14px;
+        color: #7f8c8d;
+        margin-top: 5px;
+    }
+    .savings-item {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    .savings-item:last-child {
+        border-bottom: none;
+    }
+    .efficiency-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .under-budget {
+        background: #d4edda;
+        color: #155724;
+    }
+    .over-budget {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Budget Analytics & Insights</h2>
+    
+    <!-- Budget Overview Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Budget Overview</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <canvas id="budgetOverviewChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <div id="budgetSummary"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Savings Potential Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Savings Potential</h4>
+        </div>
+        <div class="card-body">
+            <div id="savingsSuggestions"></div>
+        </div>
+    </div>
+
+    <!-- Category Efficiency Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Category Efficiency</h4>
+        </div>
+        <div class="card-body">
+            <canvas id="categoryEfficiencyChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Budget Forecast Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Budget Forecast</h4>
+        </div>
+        <div class="card-body">
+            <canvas id="forecastChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch and display budget overview
+    fetch('/budget-analytics/overview')
+        .then(response => response.json())
+        .then(data => {
+            // Display summary
+            const summaryHtml = `
+                <div class="alert alert-info">
+                    <h5>Total Budget: $${data.summary.total_budget.toFixed(2)}</h5>
+                    <h5>Total Spent: $${data.summary.total_spent.toFixed(2)}</h5>
+                    <h5>Remaining: $${data.summary.total_remaining.toFixed(2)}</h5>
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: ${data.summary.overall_percentage}%"
+                             aria-valuenow="${data.summary.overall_percentage}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                            ${data.summary.overall_percentage.toFixed(1)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('budgetSummary').innerHTML = summaryHtml;
+
+            // Create overview chart
+            const ctx = document.getElementById('budgetOverviewChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.budgets.map(b => b.name),
+                    datasets: [{
+                        data: data.budgets.map(b => b.spent),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Budget Distribution'
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching budget overview:', error));
+
+    // Fetch and display savings potential
+    fetch('/budget-analytics/savings-potential')
+        .then(response => response.json())
+        .then(data => {
+            const savingsHtml = data.map(item => `
+                <div class="alert alert-warning">
+                    <h5>${item.description} (${item.category})</h5>
+                    <p>Average Amount: $${item.average_amount.toFixed(2)}</p>
+                    <p>Highest Amount: $${item.highest_amount.toFixed(2)}</p>
+                    <p>Potential Saving: $${item.potential_saving.toFixed(2)}</p>
+                    <p>Occurs ${item.occurrence_count} times</p>
+                </div>
+            `).join('');
+            document.getElementById('savingsSuggestions').innerHTML = savingsHtml || '<p>No savings suggestions available.</p>';
+        })
+        .catch(error => console.error('Error fetching savings potential:', error));
+
+    // Fetch and display category efficiency
+    fetch('/budget-analytics/category-efficiency')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('categoryEfficiencyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(d => d.category),
+                    datasets: [{
+                        label: 'Budget Amount',
+                        data: data.map(d => d.budget_amount),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Actual Spent',
+                        data: data.map(d => d.actual_spent),
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching category efficiency:', error));
+
+    // Fetch and display forecast
+    fetch('/budget-analytics/forecast')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            const allMonths = [
+                ...data.historical_data.map(d => d.month),
+                ...data.forecast.map(d => d.month)
+            ];
+            const historicalAmounts = data.historical_data.map(d => d.amount);
+            const forecastAmounts = data.forecast.map(d => d.projected_amount);
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allMonths,
+                    datasets: [{
+                        label: 'Historical Spending',
+                        data: [...historicalAmounts, null, null, null],
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        fill: false
+                    }, {
+                        label: 'Forecast',
+                        data: [...Array(historicalAmounts.length).fill(null), ...forecastAmounts],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => console.error('Error fetching forecast:', error));
+});
+</script>
+{% endblock %}
