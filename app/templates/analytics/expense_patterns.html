@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Expense Patterns Analysis</h1>
+    
+    <div class="row">
+        <!-- Daily Spending Pattern -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Spending by Day of Week</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hourly Spending Pattern -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Spending by Time of Day</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recurring Expense Patterns -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Common Recurring Expenses</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Frequency</th>
+                                    <th>Average Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pattern in recurring_patterns %}
+                                <tr>
+                                    <td>{{ pattern.description }}</td>
+                                    <td>{{ pattern.frequency }}</td>
+                                    <td>{{ "%.2f"|format(pattern.avg_amount) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const hours = Array.from({length: 24}, (_, i) => `${i}:00`);
+    
+    // Daily Pattern Chart
+    const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+    new Chart(dailyCtx, {
+        type: 'bar',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Average Spending',
+                data: [
+                    {% for pattern in daily_pattern %}
+                    {{ "%.2f"|format(pattern.avg_amount) }},
+                    {% endfor %}
+                ],
+                backgroundColor: '#36A2EB'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Average Amount'
+                    }
+                }
+            }
+        }
+    });
+
+    // Hourly Pattern Chart
+    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+    new Chart(hourlyCtx, {
+        type: 'line',
+        data: {
+            labels: hours,
+            datasets: [{
+                label: 'Average Spending',
+                data: [
+                    {% for pattern in hourly_pattern %}
+                    {{ "%.2f"|format(pattern.avg_amount) }},
+                    {% endfor %}
+                ],
+                borderColor: '#FF6384',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Average Amount'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Hour of Day'
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

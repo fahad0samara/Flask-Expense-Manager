@@ -2,6 +2,8 @@ from app import db, login_manager, bcrypt
 from flask_login import UserMixin
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from app.models.expense import ExpenseSplit, Expense
+from app.models.settlement import Settlement
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -23,6 +25,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     expenses = relationship('Expense', back_populates='payer')
+    expense_splits = relationship('ExpenseSplit', back_populates='user')
     group_memberships = relationship('GroupMembership', back_populates='user')
     settlements_paid = relationship('Settlement', foreign_keys='Settlement.payer_id', back_populates='payer')
     settlements_received = relationship('Settlement', foreign_keys='Settlement.receiver_id', back_populates='receiver')

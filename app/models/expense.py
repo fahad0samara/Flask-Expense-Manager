@@ -7,6 +7,7 @@ class ExpenseCategory(db.Model):
     name = db.Column(db.String(50), nullable=False)
     icon = db.Column(db.String(50))
     color = db.Column(db.String(7))  # Hex color code
+    description = db.Column(db.Text)
     
     # Relationships
     expenses = relationship('Expense', back_populates='category')
@@ -16,7 +17,7 @@ class ExpenseCategory(db.Model):
 
 class Expense(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    description = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.String(200), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, default=datetime.utcnow)
     split_type = db.Column(db.String(20), default='equal')  # equal, percentage, custom
@@ -33,7 +34,7 @@ class Expense(db.Model):
     payer = relationship('User', back_populates='expenses')
     group = relationship('Group', back_populates='expenses')
     category = relationship('ExpenseCategory', back_populates='expenses')
-    splits = relationship('ExpenseSplit', back_populates='expense', cascade='all, delete-orphan')
+    splits = relationship('ExpenseSplit', back_populates='expense')
     
     def calculate_splits(self, split_data=None):
         """Calculate expense splits based on split type"""
@@ -52,7 +53,7 @@ class Expense(db.Model):
         return []
     
     def __repr__(self):
-        return f'<Expense {self.description} - ${self.amount}>'
+        return f'<Expense ${self.amount} by {self.payer.username}>'
 
 class ExpenseSplit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,7 +64,7 @@ class ExpenseSplit(db.Model):
     
     # Relationships
     expense = relationship('Expense', back_populates='splits')
-    user = relationship('User')
+    user = relationship('User', back_populates='expense_splits')
     
     def __repr__(self):
-        return f'<ExpenseSplit Expense:{self.expense_id} User:{self.user_id} Amount:${self.amount}>'
+        return f'<ExpenseSplit ${self.amount} for {self.user.username}>'

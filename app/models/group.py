@@ -11,6 +11,7 @@ class Group(db.Model):
     # Relationships
     members = relationship('GroupMembership', back_populates='group')
     expenses = relationship('Expense', back_populates='group')
+    settlements = relationship('Settlement', back_populates='group')
     
     def __repr__(self):
         return f'<Group {self.name}>'
