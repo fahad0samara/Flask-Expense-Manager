@@ -6,9 +6,9 @@ from app.models.user import User
 from app.models.group import Group
 from datetime import datetime
 
-bp = Blueprint('settlements', __name__)
+settlements = Blueprint('settlements', __name__)
 
-@bp.route('/settlements')
+@settlements.route('/settlements')
 @login_required
 def list_settlements():
     # Get settlements where user is either payer or receiver
@@ -19,7 +19,7 @@ def list_settlements():
     
     return render_template('settlements/list_settlements.html', settlements=settlements)
 
-@bp.route('/settlements/new', methods=['GET', 'POST'])
+@settlements.route('/settlements/new', methods=['GET', 'POST'])
 @login_required
 def create_settlement():
     if request.method == 'POST':
@@ -54,7 +54,7 @@ def create_settlement():
                          users=users,
                          groups=groups)
 
-@bp.route('/settlements/<int:settlement_id>/status', methods=['POST'])
+@settlements.route('/settlements/<int:settlement_id>/status', methods=['POST'])
 @login_required
 def update_settlement_status(settlement_id):
     settlement = Settlement.query.get_or_404(settlement_id)

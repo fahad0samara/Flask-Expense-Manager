@@ -3,15 +3,15 @@ from flask_login import login_required, current_user
 from app.models import db, Group, GroupMembership, User
 from datetime import datetime
 
-bp = Blueprint('group', __name__)
+group = Blueprint('group', __name__)
 
-@bp.route('/', methods=['GET'])
+@group.route('/', methods=['GET'])
 @login_required
 def list_groups():
     groups = Group.query.filter(Group.members.any(id=current_user.id)).all()
     return render_template('groups/list.html', groups=groups)
 
-@bp.route('/create', methods=['GET', 'POST'])
+@group.route('/create', methods=['GET', 'POST'])
 @login_required
 def create_group():
     if request.method == 'POST':
@@ -36,7 +36,7 @@ def create_group():
     
     return render_template('groups/create.html')
 
-@bp.route('/<int:group_id>', methods=['GET'])
+@group.route('/<int:group_id>', methods=['GET'])
 @login_required
 def view_group(group_id):
     group = Group.query.get_or_404(group_id)
@@ -45,7 +45,7 @@ def view_group(group_id):
         return redirect(url_for('group.list_groups'))
     return render_template('groups/detail.html', group=group)
 
-@bp.route('/<int:group_id>/edit', methods=['GET', 'POST'])
+@group.route('/<int:group_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_group(group_id):
     group = Group.query.get_or_404(group_id)
@@ -63,7 +63,7 @@ def edit_group(group_id):
     
     return render_template('groups/edit.html', group=group)
 
-@bp.route('/<int:group_id>/members/add', methods=['POST'])
+@group.route('/<int:group_id>/members/add', methods=['POST'])
 @login_required
 def add_member(group_id):
     group = Group.query.get_or_404(group_id)
@@ -89,7 +89,7 @@ def add_member(group_id):
     flash('Member added successfully!', 'success')
     return redirect(url_for('group.view_group', group_id=group.id))
 
-@bp.route('/<int:group_id>/members/<int:user_id>/remove', methods=['POST'])
+@group.route('/<int:group_id>/members/<int:user_id>/remove', methods=['POST'])
 @login_required
 def remove_member(group_id, user_id):
     group = Group.query.get_or_404(group_id)
@@ -109,7 +109,7 @@ def remove_member(group_id, user_id):
     flash('Member removed successfully!', 'success')
     return redirect(url_for('group.view_group', group_id=group.id))
 
-@bp.route('/api/group/<int:group_id>/members')
+@group.route('/api/group/<int:group_id>/members')
 @login_required
 def get_group_members(group_id):
     group = Group.query.get_or_404(group_id)

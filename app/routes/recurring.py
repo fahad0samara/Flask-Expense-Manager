@@ -7,9 +7,9 @@ from app.models.group import Group
 from app.models.user import User
 from datetime import datetime, timedelta
 
-bp = Blueprint('recurring', __name__)
+recurring = Blueprint('recurring', __name__)
 
-@bp.route('/recurring')
+@recurring.route('/recurring')
 @login_required
 def list_recurring():
     recurring_expenses = RecurringExpense.query.filter(
@@ -20,7 +20,7 @@ def list_recurring():
     return render_template('recurring/list_recurring.html',
                          recurring_expenses=recurring_expenses)
 
-@bp.route('/recurring/new', methods=['GET', 'POST'])
+@recurring.route('/recurring/new', methods=['GET', 'POST'])
 @login_required
 def create_recurring():
     if request.method == 'POST':
@@ -72,7 +72,7 @@ def create_recurring():
     groups = Group.query.join(Group.members).filter_by(user_id=current_user.id).all()
     return render_template('recurring/create_recurring.html', groups=groups)
 
-@bp.route('/recurring/<int:expense_id>/edit', methods=['GET', 'POST'])
+@recurring.route('/recurring/<int:expense_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_recurring(expense_id):
     recurring_expense = RecurringExpense.query.get_or_404(expense_id)
@@ -123,7 +123,7 @@ def edit_recurring(expense_id):
                          expense=recurring_expense,
                          groups=groups)
 
-@bp.route('/recurring/<int:expense_id>/toggle', methods=['POST'])
+@recurring.route('/recurring/<int:expense_id>/toggle', methods=['POST'])
 @login_required
 def toggle_recurring(expense_id):
     recurring_expense = RecurringExpense.query.get_or_404(expense_id)

@@ -7,9 +7,9 @@ from app.models.notification import Notification
 from datetime import datetime, timedelta
 import calendar
 
-bp = Blueprint('budget', __name__)
+budget = Blueprint('budget', __name__)
 
-@bp.route('/budgets')
+@budget.route('/budgets')
 @login_required
 def list_budgets():
     personal_budgets = Budget.query.filter_by(
@@ -25,7 +25,7 @@ def list_budgets():
                          personal_budgets=personal_budgets,
                          group_budgets=group_budgets)
 
-@bp.route('/budgets/new', methods=['GET', 'POST'])
+@budget.route('/budgets/new', methods=['GET', 'POST'])
 @login_required
 def create_budget():
     if request.method == 'POST':
@@ -71,7 +71,7 @@ def create_budget():
                          categories=categories,
                          groups=groups)
 
-@bp.route('/budgets/<int:budget_id>')
+@budget.route('/budgets/<int:budget_id>')
 @login_required
 def view_budget(budget_id):
     budget = Budget.query.get_or_404(budget_id)
@@ -125,7 +125,7 @@ def view_budget(budget_id):
                          budget=budget,
                          spending_data=spending_data)
 
-@bp.route('/budgets/<int:budget_id>/edit', methods=['GET', 'POST'])
+@budget.route('/budgets/<int:budget_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_budget(budget_id):
     budget = Budget.query.get_or_404(budget_id)

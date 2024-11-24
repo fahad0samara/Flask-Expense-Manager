@@ -4,9 +4,9 @@ from app import db
 from app.models.expense import Expense, ExpenseSplit
 from app.models.group import Group
 
-bp = Blueprint('expenses', __name__)
+expenses = Blueprint('expenses', __name__)
 
-@bp.route('/expense/add', methods=['GET', 'POST'])
+@expenses.route('/expense/add', methods=['GET', 'POST'])
 @login_required
 def add_expense():
     # Get user's groups for dropdown
@@ -54,7 +54,7 @@ def add_expense():
     
     return render_template('expenses/add_expense.html', groups=groups)
 
-@bp.route('/expense/<int:expense_id>/details')
+@expenses.route('/expense/<int:expense_id>/details')
 @login_required
 def expense_details(expense_id):
     expense = Expense.query.get_or_404(expense_id)

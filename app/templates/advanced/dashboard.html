@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+.advanced-card {
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+.advanced-card:hover {
+    transform: translateY(-5px);
+}
+.metric-value {
+    font-size: 2em;
+    font-weight: bold;
+    color: #2c3e50;
+}
+.metric-label {
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+.trend-positive {
+    color: #27ae60;
+}
+.trend-negative {
+    color: #e74c3c;
+}
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 1rem;
+}
+.anomaly-item {
+    border-left: 4px solid #e74c3c;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background-color: #fff5f5;
+}
+.forecast-card {
+    background: linear-gradient(135deg, #f6f8f9 0%, #fff 100%);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.health-score {
+    font-size: 3em;
+    font-weight: bold;
+    text-align: center;
+    color: #2c3e50;
+}
+.health-label {
+    text-align: center;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+}
+.recommendation-card {
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #3498db;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Advanced Analytics Dashboard</h2>
+
+    <!-- Financial Health Score -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card advanced-card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h4 class="card-title">Financial Health Score</h4>
+                            <div class="health-score">{{ financial_health.score }}/100</div>
+                            <div class="health-label">{{ financial_health.status }}</div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                {% for metric in financial_health.metrics %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-subtitle mb-2 text-muted">{{ metric.name }}</h6>
+                                            <div class="metric-value">{{ metric.score }}/100</div>
+                                            <p class="mb-0 small">{{ metric.description }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Spending Patterns -->
+        <div class="col-md-6 mb-4">
+            <div class="card advanced-card">
+                <div class="card-body">
+                    <h4 class="card-title">Spending Patterns</h4>
+                    <div class="chart-container">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        {% for pattern in spending_patterns %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ pattern.category }}</span>
+                            <span class="badge {% if pattern.trend > 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ pattern.trend }}% {% if pattern.trend > 0 %}↑{% else %}↓{% endif %}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Anomaly Detection -->
+        <div class="col-md-6 mb-4">
+            <div class="card advanced-card">
+                <div class="card-body">
+                    <h4 class="card-title">Anomaly Detection</h4>
+                    {% for anomaly in anomaly_detection %}
+                    <div class="anomaly-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>${{ "%.2f"|format(anomaly.amount) }}</strong>
+                            <span class="text-muted">{{ anomaly.date }}</span>
+                        </div>
+                        <div>{{ anomaly.category }}</div>
+                        <small class="text-muted">{{ anomaly.description }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Expense Forecasts -->
+        <div class="col-md-6 mb-4">
+            <div class="card advanced-card">
+                <div class="card-body">
+                    <h4 class="card-title">Expense Forecasts</h4>
+                    <div class="chart-container">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                    {% for forecast in expense_forecasts %}
+                    <div class="forecast-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ forecast.month }}</h6>
+                                <small class="text-muted">Predicted Amount</small>
+                            </div>
+                            <div class="text-end">
+                                <h5 class="mb-0">${{ "%.2f"|format(forecast.amount) }}</h5>
+                                <small class="{% if forecast.change > 0 %}trend-positive{% else %}trend-negative{% endif %}">
+                                    {{ forecast.change }}% {% if forecast.change > 0 %}↑{% else %}↓{% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Peer Comparison -->
+        <div class="col-md-6 mb-4">
+            <div class="card advanced-card">
+                <div class="card-body">
+                    <h4 class="card-title">Peer Comparison</h4>
+                    <div class="chart-container">
+                        <canvas id="peerChart"></canvas>
+                    </div>
+                    <div class="mt-3">
+                        {% for category in peer_comparison %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ category.name }}</span>
+                            <div>
+                                <span class="badge {% if category.percentile > 50 %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ category.percentile }}th percentile
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Recommendations -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card advanced-card">
+                <div class="card-body">
+                    <h4 class="card-title">Smart Recommendations</h4>
+                    <div class="row">
+                        {% for recommendation in recommendations %}
+                        <div class="col-md-4">
+                            <div class="recommendation-card">
+                                <h6>{{ recommendation.title }}</h6>
+                                <p class="mb-2">{{ recommendation.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">Potential Impact</small>
+                                    <span class="badge bg-primary">{{ recommendation.impact }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Spending Patterns Chart
+    new Chart(document.getElementById('spendingChart'), {
+        type: 'line',
+        data: {
+            labels: {{ spending_patterns|map(attribute='date')|list|tojson }},
+            datasets: [{
+                label: 'Spending Trend',
+                data: {{ spending_patterns|map(attribute='amount')|list|tojson }},
+                borderColor: '#3498db',
+                tension: 0.1,
+                fill: true,
+                backgroundColor: 'rgba(52, 152, 219, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '$' + value
+                    }
+                }
+            }
+        }
+    });
+
+    // Forecast Chart
+    new Chart(document.getElementById('forecastChart'), {
+        type: 'line',
+        data: {
+            labels: {{ expense_forecasts|map(attribute='month')|list|tojson }},
+            datasets: [{
+                label: 'Predicted Expenses',
+                data: {{ expense_forecasts|map(attribute='amount')|list|tojson }},
+                borderColor: '#27ae60',
+                tension: 0.1,
+                fill: true,
+                backgroundColor: 'rgba(39, 174, 96, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '$' + value
+                    }
+                }
+            }
+        }
+    });
+
+    // Peer Comparison Chart
+    new Chart(document.getElementById('peerChart'), {
+        type: 'radar',
+        data: {
+            labels: {{ peer_comparison|map(attribute='name')|list|tojson }},
+            datasets: [{
+                label: 'Your Spending',
+                data: {{ peer_comparison|map(attribute='user_amount')|list|tojson }},
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.2)'
+            }, {
+                label: 'Peer Average',
+                data: {{ peer_comparison|map(attribute='peer_average')|list|tojson }},
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.2)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '$' + value
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Periodic updates
+function updateDashboard() {
+    fetch('/api/advanced/spending-patterns')
+        .then(response => response.json())
+        .then(data => {
+            // Update spending patterns
+        });
+
+    fetch('/api/advanced/anomalies')
+        .then(response => response.json())
+        .then(data => {
+            // Update anomalies
+        });
+
+    fetch('/api/advanced/forecasts')
+        .then(response => response.json())
+        .then(data => {
+            // Update forecasts
+        });
+
+    fetch('/api/advanced/peer-comparison')
+        .then(response => response.json())
+        .then(data => {
+            // Update peer comparison
+        });
+
+    fetch('/api/advanced/financial-health')
+        .then(response => response.json())
+        .then(data => {
+            // Update financial health
+        });
+}
+
+// Update dashboard every 5 minutes
+setInterval(updateDashboard, 300000);
+</script>
+{% endblock %}

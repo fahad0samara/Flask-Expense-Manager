@@ -7,9 +7,9 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 import calendar
 
-bp = Blueprint('analytics', __name__)
+analytics = Blueprint('analytics', __name__)
 
-@bp.route('/analytics')
+@analytics.route('/analytics')
 @login_required
 def dashboard():
     # Get total spending by category for current month
@@ -69,7 +69,7 @@ def dashboard():
                          spending_trend=spending_trend,
                          group_spending=group_spending)
 
-@bp.route('/analytics/expense-patterns')
+@analytics.route('/analytics/expense-patterns')
 @login_required
 def expense_patterns():
     # Get spending by day of week
@@ -108,7 +108,7 @@ def expense_patterns():
                          hourly_pattern=hourly_pattern,
                          recurring_patterns=recurring_patterns)
 
-@bp.route('/analytics/group-insights/<int:group_id>')
+@analytics.route('/analytics/group-insights/<int:group_id>')
 @login_required
 def group_insights(group_id):
     group = Group.query.get_or_404(group_id)
@@ -165,7 +165,7 @@ def group_insights(group_id):
                          months=months,
                          group_trend=group_trend)
 
-@bp.route('/api/analytics/spending-trend')
+@analytics.route('/api/analytics/spending-trend')
 @login_required
 def api_spending_trend():
     """API endpoint for getting spending trend data"""

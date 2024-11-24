@@ -7,9 +7,9 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 import calendar
 
-bp = Blueprint('budget_analytics', __name__)
+budget_analytics = Blueprint('budget_analytics', __name__)
 
-@bp.route('/budget-analytics')
+@budget_analytics.route('/budget-analytics')
 @login_required
 def analytics_dashboard():
     try:
@@ -18,7 +18,7 @@ def analytics_dashboard():
         print(f"Error rendering dashboard: {str(e)}")
         return str(e), 500
 
-@bp.route('/budget-analytics/overview')
+@budget_analytics.route('/budget-analytics/overview')
 @login_required
 def budget_overview():
     """Get overview of all active budgets"""
@@ -67,7 +67,7 @@ def budget_overview():
         print(f"Error in budget overview: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/budget-analytics/savings-potential')
+@budget_analytics.route('/budget-analytics/savings-potential')
 @login_required
 def savings_potential():
     """Analyze potential savings based on spending patterns"""
@@ -110,7 +110,7 @@ def savings_potential():
         print(f"Error in savings potential: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/budget-analytics/category-efficiency')
+@budget_analytics.route('/budget-analytics/category-efficiency')
 @login_required
 def category_efficiency():
     """Analyze budget efficiency by category"""
@@ -143,7 +143,7 @@ def category_efficiency():
         print(f"Error in category efficiency: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/budget-analytics/forecast')
+@budget_analytics.route('/budget-analytics/forecast')
 @login_required
 def budget_forecast():
     """Forecast future budget requirements"""

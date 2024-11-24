@@ -6,14 +6,14 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 import calendar
 
-bp = Blueprint('reports', __name__)
+reports = Blueprint('reports', __name__)
 
-@bp.route('/reports')
+@reports.route('/reports')
 @login_required
 def reports_dashboard():
     return render_template('reports/dashboard.html')
 
-@bp.route('/reports/monthly-trend')
+@reports.route('/reports/monthly-trend')
 @login_required
 def monthly_trend():
     # Get expenses for the last 12 months
@@ -40,7 +40,7 @@ def monthly_trend():
         'total': float(expense.total)
     } for expense in monthly_expenses])
 
-@bp.route('/reports/category-analysis')
+@reports.route('/reports/category-analysis')
 @login_required
 def category_analysis():
     # Get category-wise spending for current month
@@ -67,7 +67,7 @@ def category_analysis():
         'total': float(expense.total)
     } for expense in category_expenses])
 
-@bp.route('/reports/top-spenders')
+@reports.route('/reports/top-spenders')
 @login_required
 def top_spenders():
     # Get top spenders in user's groups
@@ -97,7 +97,7 @@ def top_spenders():
         'total': float(spender.total)
     } for spender in top_spenders])
 
-@bp.route('/reports/expense-forecast')
+@reports.route('/reports/expense-forecast')
 @login_required
 def expense_forecast():
     # Calculate average daily spending

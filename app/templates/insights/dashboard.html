@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+.insight-card {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.insight-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.recommendation-item {
+    border-left: 4px solid;
+    padding-left: 15px;
+    margin-bottom: 15px;
+}
+.recommendation-item.frequency { border-color: #FF6B6B; }
+.recommendation-item.increase { border-color: #4ECDC4; }
+.recommendation-item.high_value { border-color: #45B7D1; }
+.savings-item {
+    background: linear-gradient(135deg, #f6f8f9 0%, #fff 100%);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.savings-amount {
+    font-size: 1.5em;
+    color: #28a745;
+    font-weight: bold;
+}
+.trend-indicator {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.9em;
+}
+.trend-up { background-color: #ffd3d3; color: #d63031; }
+.trend-down { background-color: #c8f7c5; color: #27ae60; }
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Smart Insights</h2>
+
+    <!-- Monthly Prediction -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card insight-card">
+                <div class="card-body">
+                    <h4 class="card-title">Monthly Expense Prediction</h4>
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h3 class="mb-3">${{ "%.2f"|format(monthly_trends.prediction) }}</h3>
+                            <p class="mb-2">Predicted expenses for next month</p>
+                            <span class="trend-indicator {% if monthly_trends.trend > 0 %}trend-up{% else %}trend-down{% endif %}">
+                                {% if monthly_trends.trend > 0 %}
+                                <i class="fas fa-arrow-up"></i> Increasing trend
+                                {% else %}
+                                <i class="fas fa-arrow-down"></i> Decreasing trend
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Budget Recommendations -->
+        <div class="col-md-6 mb-4">
+            <div class="card insight-card">
+                <div class="card-body">
+                    <h4 class="card-title">Smart Recommendations</h4>
+                    <div id="recommendations">
+                        {% for rec in budget_recommendations %}
+                        <div class="recommendation-item {{ rec.type }}">
+                            <h5>{{ rec.category }}</h5>
+                            <p class="mb-0">{{ rec.message }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Savings Opportunities -->
+        <div class="col-md-6 mb-4">
+            <div class="card insight-card">
+                <div class="card-body">
+                    <h4 class="card-title">Savings Opportunities</h4>
+                    <div id="savings">
+                        {% for opp in savings_opportunities %}
+                        <div class="savings-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0">{{ opp.category }}</h5>
+                                <span class="savings-amount">${{ "%.2f"|format(opp.potential_savings) }}</span>
+                            </div>
+                            <p class="mb-0">{{ opp.message }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Insights -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card insight-card">
+                <div class="card-body">
+                    <h4 class="card-title">Category Analysis</h4>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Total Amount</th>
+                                    <th>Transactions</th>
+                                    <th>Average</th>
+                                    <th>Monthly Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for insight in category_insights %}
+                                <tr>
+                                    <td>{{ insight.category }}</td>
+                                    <td>${{ "%.2f"|format(insight.total_amount) }}</td>
+                                    <td>{{ insight.transaction_count }}</td>
+                                    <td>${{ "%.2f"|format(insight.avg_amount) }}</td>
+                                    <td>
+                                        <span class="badge {% if insight.month_over_month_change > 0 %}bg-danger{% else %}bg-success{% endif %}">
+                                            {{ "%.1f"|format(insight.month_over_month_change) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Analysis -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card insight-card">
+                <div class="card-body">
+                    <h4 class="card-title">Group Spending Analysis</h4>
+                    <div class="row">
+                        {% for group in group_analysis %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ group.group_name }}</h5>
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <div>
+                                            <p class="mb-1">Total Spent</p>
+                                            <h4>${{ "%.2f"|format(group.total_amount) }}</h4>
+                                        </div>
+                                        <div>
+                                            <p class="mb-1">Transactions</p>
+                                            <h4>{{ group.transaction_count }}</h4>
+                                        </div>
+                                        <div>
+                                            <p class="mb-1">Average</p>
+                                            <h4>${{ "%.2f"|format(group.avg_amount) }}</h4>
+                                        </div>
+                                    </div>
+                                    <div class="chart-container">
+                                        <canvas id="groupChart{{ loop.index }}"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Trend Chart
+    const trendData = {{ monthly_trends.monthly_data|tojson }};
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: {
+            labels: trendData.map(d => new Date(d[0]).toLocaleDateString('en-US', { month: 'short' })),
+            datasets: [{
+                label: 'Monthly Expenses',
+                data: trendData.map(d => d[1]),
+                borderColor: '#4ECDC4',
+                tension: 0.1,
+                fill: true,
+                backgroundColor: 'rgba(78, 205, 196, 0.1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: value => '$' + value
+                    }
+                }
+            }
+        }
+    });
+
+    // Group Charts
+    {% for group in group_analysis %}
+    new Chart(document.getElementById('groupChart{{ loop.index }}'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys({{ group.category_distribution|tojson }}),
+            datasets: [{
+                data: Object.values({{ group.category_distribution|tojson }}),
+                backgroundColor: [
+                    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD',
+                    '#D4A5A5', '#9EECFF', '#9FA0FF', '#A0FFE6', '#FFABAB'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 12
+                    }
+                }
+            }
+        }
+    });
+    {% endfor %}
+});
+
+// Periodic updates
+function updateInsights() {
+    fetch('/api/insights/recommendations')
+        .then(response => response.json())
+        .then(recommendations => {
+            // Update recommendations
+        });
+
+    fetch('/api/insights/savings')
+        .then(response => response.json())
+        .then(savings => {
+            // Update savings opportunities
+        });
+
+    fetch('/api/insights/trends')
+        .then(response => response.json())
+        .then(trends => {
+            // Update trend chart
+        });
+}
+
+// Update insights every 5 minutes
+setInterval(updateInsights, 300000);
+</script>
+{% endblock %}

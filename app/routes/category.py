@@ -2,15 +2,15 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.models import db, ExpenseCategory
 
-bp = Blueprint('category', __name__)
+category = Blueprint('category', __name__)
 
-@bp.route('/', methods=['GET'])
+@category.route('/', methods=['GET'])
 @login_required
 def list_categories():
     categories = ExpenseCategory.query.all()
     return render_template('category/list.html', categories=categories)
 
-@bp.route('/add', methods=['GET', 'POST'])
+@category.route('/add', methods=['GET', 'POST'])
 @login_required
 def add_category():
     if request.method == 'POST':
@@ -42,7 +42,7 @@ def add_category():
 
     return render_template('category/add.html')
 
-@bp.route('/edit/<int:category_id>', methods=['GET', 'POST'])
+@category.route('/edit/<int:category_id>', methods=['GET', 'POST'])
 @login_required
 def edit_category(category_id):
     category = ExpenseCategory.query.get_or_404(category_id)
@@ -72,7 +72,7 @@ def edit_category(category_id):
 
     return render_template('category/edit.html', category=category)
 
-@bp.route('/delete/<int:category_id>', methods=['POST'])
+@category.route('/delete/<int:category_id>', methods=['POST'])
 @login_required
 def delete_category(category_id):
     category = ExpenseCategory.query.get_or_404(category_id)

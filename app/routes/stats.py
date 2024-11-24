@@ -5,9 +5,9 @@ from dateutil.relativedelta import relativedelta
 from app.models import ExpenseCategory, Group
 import json
 
-bp = Blueprint('stats', __name__)
+stats = Blueprint('stats', __name__)
 
-@bp.route('/stats')
+@stats.route('/stats')
 @login_required
 def view_stats():
     # Get date range

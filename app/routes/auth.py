@@ -5,9 +5,9 @@ from app.models.user import User
 from email_validator import validate_email, EmailNotValidError
 from urllib.parse import urlparse
 
-bp = Blueprint('auth', __name__)
+auth = Blueprint('auth', __name__)
 
-@bp.route('/register', methods=['GET', 'POST'])
+@auth.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
@@ -46,7 +46,7 @@ def register():
     
     return render_template('auth/register.html')
 
-@bp.route('/login', methods=['GET', 'POST'])
+@auth.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.dashboard'))
@@ -73,7 +73,7 @@ def login():
     
     return render_template('auth/login.html')
 
-@bp.route('/logout')
+@auth.route('/logout')
 @login_required
 def logout():
     logout_user()

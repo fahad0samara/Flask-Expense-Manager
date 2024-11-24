@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+.activity-item {
+    transition: transform 0.2s;
+    border-left: 4px solid transparent;
+}
+.activity-item:hover {
+    transform: translateX(5px);
+}
+.activity-item.expense {
+    border-left-color: #4CAF50;
+}
+.activity-timestamp {
+    color: #666;
+    font-size: 0.9em;
+}
+.split-details {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 0.5rem;
+}
+.split-details ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 0;
+}
+.activity-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2em;
+}
+.badge-expense {
+    background-color: #4CAF50;
+}
+.new-activity {
+    animation: fadeIn 0.5s ease-in;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="mb-4">Activity Feed</h2>
+            
+            <!-- Real-time Updates Banner -->
+            <div id="new-activities-banner" class="alert alert-info d-none" role="alert">
+                <i class="fas fa-sync-alt"></i> New activities available
+                <button class="btn btn-sm btn-outline-info float-end" onclick="loadNewActivities()">
+                    Refresh
+                </button>
+            </div>
+
+            <!-- Activity Feed -->
+            <div id="activity-feed">
+                {% for item in activity_items %}
+                <div class="card activity-item expense mb-3">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="activity-badge badge-expense me-3">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h5 class="card-title mb-1">{{ item.expense.description }}</h5>
+                                    <span class="badge bg-primary">${{ "%.2f"|format(item.expense.amount) }}</span>
+                                </div>
+                                <p class="card-text mb-1">
+                                    <strong>{{ item.payer_name }}</strong> paid in 
+                                    <strong>{{ item.group_name }}</strong>
+                                </p>
+                                <div class="activity-timestamp">
+                                    <i class="far fa-clock"></i>
+                                    {{ item.expense.date.strftime('%B %d, %Y at %I:%M %p') }}
+                                </div>
+                                
+                                <!-- Split Details -->
+                                <div class="split-details">
+                                    <a class="btn btn-sm btn-link p-0" data-bs-toggle="collapse" 
+                                       href="#splits-{{ item.expense.id }}">
+                                        Show split details
+                                    </a>
+                                    <div class="collapse" id="splits-{{ item.expense.id }}">
+                                        <ul class="mt-2">
+                                            {% for split, username in item.splits %}
+                                            <li>
+                                                {{ username }}: ${{ "%.2f"|format(split.amount) }}
+                                                {% if split.percentage %}
+                                                ({{ "%.1f"|format(split.percentage) }}%)
+                                                {% endif %}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let lastCheck = new Date();
+
+function checkNewActivities() {
+    fetch('/api/activity/recent')
+        .then(response => response.json())
+        .then(activities => {
+            const newActivities = activities.filter(activity => 
+                new Date(activity.date) > lastCheck
+            );
+            
+            if (newActivities.length > 0) {
+                document.getElementById('new-activities-banner').classList.remove('d-none');
+            }
+        });
+}
+
+function loadNewActivities() {
+    location.reload();
+}
+
+// Check for new activities every minute
+setInterval(checkNewActivities, 60000);
+
+// Initialize Bootstrap tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+});
+</script>
+{% endblock %}

@@ -6,9 +6,9 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 
-bp = Blueprint('profile', __name__)
+profile = Blueprint('profile', __name__)
 
-@bp.route('/profile')
+@profile.route('/profile')
 @login_required
 def view_profile():
     monthly_spending = current_user.get_monthly_spending(
@@ -22,7 +22,7 @@ def view_profile():
                          monthly_spending=monthly_spending,
                          total_balance=total_balance)
 
-@bp.route('/profile/edit', methods=['GET', 'POST'])
+@profile.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
     if request.method == 'POST':
@@ -63,7 +63,7 @@ def edit_profile():
     
     return render_template('profile/edit_profile.html', user=current_user)
 
-@bp.route('/profile/summary')
+@profile.route('/profile/summary')
 @login_required
 def spending_summary():
     # Get spending by category for current month

@@ -3,13 +3,13 @@ from flask_login import login_required, current_user
 from app.models.group import Group
 from app.models.expense import Expense
 
-bp = Blueprint('main', __name__)
+main = Blueprint('main', __name__)
 
-@bp.route('/')
+@main.route('/')
 def index():
     return render_template('main/index.html')
 
-@bp.route('/dashboard')
+@main.route('/dashboard')
 @login_required
 def dashboard():
     # Get user's groups

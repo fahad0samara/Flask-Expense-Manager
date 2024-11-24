@@ -30,19 +30,12 @@ class UserNotificationPreference(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
-    # Email notification preferences
-    email_new_expense = db.Column(db.Boolean, default=True)
-    email_expense_reminder = db.Column(db.Boolean, default=True)
-    email_settlement_request = db.Column(db.Boolean, default=True)
-    email_monthly_summary = db.Column(db.Boolean, default=True)
-    email_budget_alert = db.Column(db.Boolean, default=True)
-    
-    # Push notification preferences
-    push_new_expense = db.Column(db.Boolean, default=True)
-    push_expense_reminder = db.Column(db.Boolean, default=True)
-    push_settlement_request = db.Column(db.Boolean, default=True)
-    push_monthly_summary = db.Column(db.Boolean, default=False)
-    push_budget_alert = db.Column(db.Boolean, default=True)
+    # App notification preferences
+    notify_new_expense = db.Column(db.Boolean, default=True)
+    notify_expense_reminder = db.Column(db.Boolean, default=True)
+    notify_settlement_request = db.Column(db.Boolean, default=True)
+    notify_monthly_summary = db.Column(db.Boolean, default=True)
+    notify_budget_alert = db.Column(db.Boolean, default=True)
     
     # Reminder settings
     reminder_frequency = db.Column(db.String(20), default='weekly')  # daily, weekly, monthly
@@ -50,6 +43,7 @@ class UserNotificationPreference(db.Model):
     quiet_hours_start = db.Column(db.Time)
     quiet_hours_end = db.Column(db.Time)
     
+    # Relationship
     user = db.relationship('User', backref='notification_preferences')
     
     def __repr__(self):

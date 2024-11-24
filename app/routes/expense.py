@@ -3,9 +3,9 @@ from flask_login import login_required, current_user
 from app.models import db, Expense, ExpenseSplit, ExpenseCategory, User, Group
 from datetime import datetime
 
-bp = Blueprint('expense', __name__)
+expense = Blueprint('expense', __name__)
 
-@bp.route('/add', methods=['GET', 'POST'])
+@expense.route('/add', methods=['GET', 'POST'])
 @login_required
 def add_expense():
     group_id = request.args.get('group_id')
@@ -31,13 +31,13 @@ def add_expense():
         
         # Create expense
         expense = Expense(
-            title=title,
-            amount=amount,
             description=description,
+            amount=amount,
             date=datetime.now(),
-            paid_by=current_user.id,
+            payer_id=current_user.id,
             category_id=category_id,
-            group_id=group_id
+            group_id=group_id,
+            split_type=split_type
         )
         
         db.session.add(expense)
@@ -60,20 +60,19 @@ def add_expense():
         
         elif split_type == 'percentage':
             for member in members:
-                percentage = float(request.form.get(f'percentage_{member.user_id}', 0))
+                percentage = float(request.form.get(f'split_percentage_{member.user_id}', 0))
                 split_amount = (percentage / 100) * amount
                 splits.append(ExpenseSplit(
                     expense_id=expense.id,
                     user_id=member.user_id,
-                    amount=split_amount
+                    amount=split_amount,
+                    percentage=percentage
                 ))
                 total_split += split_amount
         
-        elif split_type == 'shares':
-            total_shares = sum(int(request.form.get(f'shares_{member.user_id}', 1)) for member in members)
+        elif split_type == 'custom':
             for member in members:
-                shares = int(request.form.get(f'shares_{member.user_id}', 1))
-                split_amount = (shares / total_shares) * amount
+                split_amount = float(request.form.get(f'split_amount_{member.user_id}', 0))
                 splits.append(ExpenseSplit(
                     expense_id=expense.id,
                     user_id=member.user_id,
@@ -81,18 +80,8 @@ def add_expense():
                 ))
                 total_split += split_amount
         
-        elif split_type == 'exact':
-            for member in members:
-                split_amount = float(request.form.get(f'amount_{member.user_id}', 0))
-                splits.append(ExpenseSplit(
-                    expense_id=expense.id,
-                    user_id=member.user_id,
-                    amount=split_amount
-                ))
-                total_split += split_amount
-        
-        # Verify total split amount matches expense amount
-        if abs(total_split - amount) > 0.01:  # Allow for small floating-point differences
+        # Validate total split amount matches expense amount
+        if abs(total_split - amount) > 0.01:  # Using 0.01 to handle floating point precision
             db.session.rollback()
             flash('The sum of split amounts must equal the total expense amount.', 'error')
             return redirect(url_for('expense.add_expense', group_id=group_id))
@@ -107,7 +96,7 @@ def add_expense():
             return redirect(url_for('group.view_group', group_id=group_id))
         except Exception as e:
             db.session.rollback()
-            flash('Error adding expense. Please try again.', 'error')
+            flash('An error occurred while adding the expense.', 'error')
             return redirect(url_for('expense.add_expense', group_id=group_id))
     
     # GET request - show form
@@ -119,7 +108,7 @@ def add_expense():
                          groups=groups,
                          selected_group_id=group_id)
 
-@bp.route('/', methods=['GET'])
+@expense.route('/', methods=['GET'])
 @login_required
 def view_expenses():
     group_id = request.args.get('group_id')
@@ -136,7 +125,7 @@ def view_expenses():
     
     return render_template('expense/list.html', expenses=expenses, group_id=group_id)
 
-@bp.route('/<int:expense_id>', methods=['GET'])
+@expense.route('/<int:expense_id>', methods=['GET'])
 @login_required
 def view_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
@@ -145,7 +134,7 @@ def view_expense(expense_id):
         return redirect(url_for('expense.view_expenses'))
     return render_template('expense/detail.html', expense=expense)
 
-@bp.route('/<int:expense_id>/edit', methods=['GET', 'POST'])
+@expense.route('/<int:expense_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)
@@ -166,7 +155,7 @@ def edit_expense(expense_id):
     categories = ExpenseCategory.query.all()
     return render_template('expense/edit.html', expense=expense, categories=categories)
 
-@bp.route('/<int:expense_id>/delete', methods=['POST'])
+@expense.route('/<int:expense_id>/delete', methods=['POST'])
 @login_required
 def delete_expense(expense_id):
     expense = Expense.query.get_or_404(expense_id)

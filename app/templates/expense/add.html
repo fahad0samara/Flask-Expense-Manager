@@ -2,30 +2,26 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">Add New Expense</h4>
+                    <h3 class="card-title">Add New Expense</h3>
                 </div>
                 <div class="card-body">
-                    <form method="POST">
+                    <form method="POST" action="{{ url_for('expense.add_expense') }}">
                         <div class="mb-3">
-                            <label for="title" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="title" name="title" required>
+                            <label for="description" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="description" name="description" required>
+                            <div class="form-text">Brief description of the expense</div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="amount" class="form-label">Amount</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                                <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0.01" required>
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                         </div>
 
                         <div class="mb-3">
@@ -33,27 +29,17 @@
                             <select class="form-select" id="category" name="category" required>
                                 <option value="">Select a category</option>
                                 {% for category in categories %}
-                                <option value="{{ category.id }}" data-color="{{ category.color }}" data-icon="{{ category.icon }}">
-                                    {% if category.icon %}
-                                    <i class="fas {{ category.icon }}"></i>
-                                    {% endif %}
-                                    {{ category.name }}
-                                </option>
+                                <option value="{{ category.id }}">{{ category.name }}</option>
                                 {% endfor %}
                             </select>
-                            <div class="mt-2">
-                                <a href="{{ url_for('category.add_category') }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-plus"></i> Add New Category
-                                </a>
-                            </div>
                         </div>
 
                         <div class="mb-3">
                             <label for="group" class="form-label">Group</label>
-                            <select class="form-select" id="group" name="group" required {% if selected_group_id %}disabled{% endif %}>
+                            <select class="form-select" id="group" name="group" required>
                                 <option value="">Select a group</option>
                                 {% for group in groups %}
-                                <option value="{{ group.id }}" {% if group.id == selected_group_id %}selected{% endif %}>
+                                <option value="{{ group.id }}" {% if selected_group_id == group.id %}selected{% endif %}>
                                     {{ group.name }}
                                 </option>
                                 {% endfor %}
@@ -64,20 +50,18 @@
                             <label for="split_type" class="form-label">Split Type</label>
                             <select class="form-select" id="split_type" name="split_type" required>
                                 <option value="equal">Equal Split</option>
-                                <option value="percentage">Split by Percentage</option>
-                                <option value="shares">Split by Shares</option>
-                                <option value="exact">Split by Exact Amounts</option>
+                                <option value="percentage">Percentage Split</option>
+                                <option value="custom">Custom Split</option>
                             </select>
                         </div>
 
-                        <div id="split-details" class="mb-3" style="display: none;">
+                        <div id="split-details" class="mb-3 d-none">
                             <!-- This section will be populated dynamically based on split type -->
                         </div>
 
-                        <div class="d-grid gap-2">
+                        <div class="text-end">
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary me-2">Cancel</a>
                             <button type="submit" class="btn btn-primary">Add Expense</button>
-                            <a href="{{ url_for('group.view_group', group_id=selected_group_id) if selected_group_id else url_for('main.dashboard') }}" 
-                               class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
                 </div>
@@ -93,97 +77,189 @@ document.addEventListener('DOMContentLoaded', function() {
     const splitTypeSelect = document.getElementById('split_type');
     const splitDetailsDiv = document.getElementById('split-details');
     const groupSelect = document.getElementById('group');
-    
+    const amountInput = document.getElementById('amount');
+
     function updateSplitDetails() {
         const splitType = splitTypeSelect.value;
         const groupId = groupSelect.value;
-        
+
         if (!groupId) {
-            splitDetailsDiv.style.display = 'none';
+            splitDetailsDiv.innerHTML = '';
+            splitDetailsDiv.classList.add('d-none');
             return;
         }
-        
-        // Fetch group members and update split details
+
+        // Fetch group members and show split options
         fetch(`/api/group/${groupId}/members`)
             .then(response => response.json())
             .then(members => {
-                let html = '<div class="card"><div class="card-body">';
+                let html = '';
+                const totalAmount = parseFloat(amountInput.value) || 0;
                 
-                switch(splitType) {
-                    case 'equal':
-                        html += `<p>The amount will be split equally between ${members.length} members.</p>`;
-                        break;
-                        
-                    case 'percentage':
-                        html += '<div class="row g-3">';
-                        members.forEach(member => {
-                            html += `
-                                <div class="col-md-6">
-                                    <label class="form-label">${member.name}</label>
-                                    <div class="input-group">
-                                        <input type="number" class="form-control" 
-                                               name="percentage_${member.id}" 
-                                               min="0" max="100" step="0.01" 
-                                               value="${100/members.length}">
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                </div>`;
-                        });
-                        html += '</div>';
-                        break;
-                        
-                    case 'shares':
-                        html += '<div class="row g-3">';
-                        members.forEach(member => {
-                            html += `
-                                <div class="col-md-6">
-                                    <label class="form-label">${member.name}</label>
-                                    <input type="number" class="form-control" 
-                                           name="shares_${member.id}" 
-                                           min="0" step="1" value="1">
-                                </div>`;
-                        });
-                        html += '</div>';
-                        break;
-                        
-                    case 'exact':
-                        html += '<div class="row g-3">';
-                        members.forEach(member => {
-                            html += `
-                                <div class="col-md-6">
-                                    <label class="form-label">${member.name}</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">$</span>
-                                        <input type="number" class="form-control" 
-                                               name="amount_${member.id}" 
-                                               min="0" step="0.01" value="0">
-                                    </div>
-                                </div>`;
-                        });
-                        html += '</div>';
-                        break;
+                if (splitType === 'equal') {
+                    const equalAmount = totalAmount / members.length;
+                    html = `
+                        <h5>Equal Split</h5>
+                        <p class="text-muted">Amount per person: $${equalAmount.toFixed(2)}</p>
+                        <div class="equal-split-info">
+                    `;
+                    members.forEach(member => {
+                        html += `
+                            <div class="mb-2">
+                                <label class="form-label">${member.username}</label>
+                                <input type="hidden" name="split_amount_${member.id}" value="${equalAmount.toFixed(2)}">
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" class="form-control" value="${equalAmount.toFixed(2)}" disabled>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else if (splitType === 'percentage') {
+                    html = `
+                        <h5>Percentage Split</h5>
+                        <p class="text-muted">Total should equal 100% ($${totalAmount.toFixed(2)})</p>
+                        <div class="percentage-inputs">
+                            <div id="percentage-validation" class="alert alert-info mb-3">
+                                Total: <span id="percentage-total">0</span>% 
+                                (<span id="amount-total">$0.00</span>)
+                            </div>
+                    `;
+                    members.forEach(member => {
+                        html += `
+                            <div class="mb-2">
+                                <label class="form-label">${member.username}</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control percentage-input" 
+                                           name="split_percentage_${member.id}" 
+                                           min="0" max="100" step="0.01" required>
+                                    <span class="input-group-text">%</span>
+                                    <span class="input-group-text amount-preview">$0.00</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                } else if (splitType === 'custom') {
+                    html = `
+                        <h5>Custom Split</h5>
+                        <p class="text-muted">Total should equal $${totalAmount.toFixed(2)}</p>
+                        <div class="custom-inputs">
+                            <div id="custom-validation" class="alert alert-info mb-3">
+                                Total: <span id="custom-total">$0.00</span>
+                            </div>
+                    `;
+                    members.forEach(member => {
+                        html += `
+                            <div class="mb-2">
+                                <label class="form-label">${member.username}</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control custom-input" 
+                                           name="split_amount_${member.id}" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
                 }
-                
-                html += '</div></div>';
+
                 splitDetailsDiv.innerHTML = html;
-                splitDetailsDiv.style.display = 'block';
+                splitDetailsDiv.classList.remove('d-none');
+
+                // Add validation for percentage split
+                if (splitType === 'percentage') {
+                    const percentageInputs = document.querySelectorAll('.percentage-input');
+                    const validationDiv = document.getElementById('percentage-validation');
+                    const percentageTotalSpan = document.getElementById('percentage-total');
+                    const amountTotalSpan = document.getElementById('amount-total');
+                    
+                    function updatePercentageValidation() {
+                        let totalPercentage = 0;
+                        percentageInputs.forEach((input, index) => {
+                            const percentage = parseFloat(input.value) || 0;
+                            totalPercentage += percentage;
+                            
+                            // Update amount preview
+                            const amountPreview = (percentage / 100) * totalAmount;
+                            input.closest('.input-group').querySelector('.amount-preview').textContent = 
+                                `$${amountPreview.toFixed(2)}`;
+                        });
+                        
+                        percentageTotalSpan.textContent = totalPercentage.toFixed(2);
+                        const totalAmountCalculated = (totalPercentage / 100) * totalAmount;
+                        amountTotalSpan.textContent = `$${totalAmountCalculated.toFixed(2)}`;
+                        
+                        validationDiv.className = 'alert mb-3';
+                        if (Math.abs(totalPercentage - 100) < 0.01) {
+                            validationDiv.classList.add('alert-success');
+                        } else if (totalPercentage > 100) {
+                            validationDiv.classList.add('alert-danger');
+                        } else {
+                            validationDiv.classList.add('alert-info');
+                        }
+                        
+                        // Set form validation
+                        percentageInputs.forEach(input => {
+                            if (Math.abs(totalPercentage - 100) > 0.01) {
+                                input.setCustomValidity('Total percentage must equal 100%');
+                            } else {
+                                input.setCustomValidity('');
+                            }
+                        });
+                    }
+                    
+                    percentageInputs.forEach(input => {
+                        input.addEventListener('input', updatePercentageValidation);
+                    });
+                }
+
+                // Add validation for custom split
+                if (splitType === 'custom') {
+                    const customInputs = document.querySelectorAll('.custom-input');
+                    const validationDiv = document.getElementById('custom-validation');
+                    const customTotalSpan = document.getElementById('custom-total');
+                    
+                    function updateCustomValidation() {
+                        let totalAmount = 0;
+                        customInputs.forEach(input => {
+                            totalAmount += parseFloat(input.value) || 0;
+                        });
+                        
+                        customTotalSpan.textContent = `$${totalAmount.toFixed(2)}`;
+                        const targetAmount = parseFloat(amountInput.value) || 0;
+                        
+                        validationDiv.className = 'alert mb-3';
+                        if (Math.abs(totalAmount - targetAmount) < 0.01) {
+                            validationDiv.classList.add('alert-success');
+                        } else if (totalAmount > targetAmount) {
+                            validationDiv.classList.add('alert-danger');
+                        } else {
+                            validationDiv.classList.add('alert-info');
+                        }
+                        
+                        // Set form validation
+                        customInputs.forEach(input => {
+                            if (Math.abs(totalAmount - targetAmount) > 0.01) {
+                                input.setCustomValidity('Total amount must equal the expense amount');
+                            } else {
+                                input.setCustomValidity('');
+                            }
+                        });
+                    }
+                    
+                    customInputs.forEach(input => {
+                        input.addEventListener('input', updateCustomValidation);
+                    });
+                }
             });
     }
-    
+
     splitTypeSelect.addEventListener('change', updateSplitDetails);
     groupSelect.addEventListener('change', updateSplitDetails);
-    
-    // Initialize category select styling
-    const categorySelect = document.getElementById('category');
-    categorySelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const color = selectedOption.dataset.color;
-        const icon = selectedOption.dataset.icon;
-        
-        if (color) {
-            this.style.borderColor = color;
-        }
-    });
+    amountInput.addEventListener('input', updateSplitDetails);
 });
 </script>
 {% endblock %}

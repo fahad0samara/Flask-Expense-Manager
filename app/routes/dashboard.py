@@ -5,9 +5,9 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 import calendar
 
-bp = Blueprint('dashboard', __name__)
+dashboard = Blueprint('dashboard', __name__)
 
-@bp.route('/')
+@dashboard.route('/')
 @login_required
 def index():
     # Get total expenses for current user

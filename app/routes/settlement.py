@@ -4,9 +4,9 @@ from app.models import db, Settlement, Group, User, ExpenseSplit
 from sqlalchemy import and_, or_
 from datetime import datetime
 
-bp = Blueprint('settlement', __name__)
+settlement = Blueprint('settlement', __name__)
 
-@bp.route('/group/<int:group_id>', methods=['GET'])
+@settlement.route('/group/<int:group_id>', methods=['GET'])
 @login_required
 def group_settlements(group_id):
     group = Group.query.get_or_404(group_id)
@@ -40,7 +40,7 @@ def group_settlements(group_id):
                          settlements=settlements,
                          balances=balances)
 
-@bp.route('/create/<int:group_id>', methods=['POST'])
+@settlement.route('/create/<int:group_id>', methods=['POST'])
 @login_required
 def create_settlement(group_id):
     group = Group.query.get_or_404(group_id)
@@ -71,7 +71,7 @@ def create_settlement(group_id):
     flash('Settlement recorded successfully!', 'success')
     return redirect(url_for('settlement.group_settlements', group_id=group_id))
 
-@bp.route('/<int:settlement_id>/cancel', methods=['POST'])
+@settlement.route('/<int:settlement_id>/cancel', methods=['POST'])
 @login_required
 def cancel_settlement(settlement_id):
     settlement = Settlement.query.get_or_404(settlement_id)
