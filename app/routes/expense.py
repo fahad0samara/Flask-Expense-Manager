@@ -8,6 +8,13 @@ bp = Blueprint('expense', __name__)
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
 def add_expense():
+    group_id = request.args.get('group_id')
+    if group_id:
+        group = Group.query.get_or_404(group_id)
+        if not any(member.user_id == current_user.id for member in group.members):
+            flash('You do not have permission to add expenses to this group.', 'error')
+            return redirect(url_for('group.list_groups'))
+    
     if request.method == 'POST':
         title = request.form.get('title')
         amount = float(request.form.get('amount'))
@@ -15,6 +22,12 @@ def add_expense():
         group_id = request.form.get('group')
         split_type = request.form.get('split_type', 'equal')
         description = request.form.get('description', '')
+        
+        # Verify group membership again
+        group = Group.query.get_or_404(group_id)
+        if not any(member.user_id == current_user.id for member in group.members):
+            flash('You do not have permission to add expenses to this group.', 'error')
+            return redirect(url_for('group.list_groups'))
         
         expense = Expense(
             title=title,
@@ -30,34 +43,41 @@ def add_expense():
         
         # Handle expense splits based on split_type
         if split_type == 'equal':
-            group = Group.query.get(group_id)
             members = group.members
             split_amount = amount / len(members)
             
             for member in members:
                 split = ExpenseSplit(
                     expense_id=expense.id,
-                    user_id=member.id,
+                    user_id=member.user_id,
                     amount=split_amount
                 )
                 db.session.add(split)
         
         db.session.commit()
         flash('Expense added successfully!', 'success')
-        return redirect(url_for('expense.view_expenses'))
+        return redirect(url_for('expense.view_expenses', group_id=group_id))
     
     categories = ExpenseCategory.query.all()
-    groups = Group.query.filter(Group.members.any(id=current_user.id)).all()
-    return render_template('expense/add.html', categories=categories, groups=groups)
+    groups = [group_id] if group_id else [g.id for g in Group.query.filter(Group.members.any(user_id=current_user.id)).all()]
+    return render_template('expense/add.html', categories=categories, groups=groups, selected_group_id=group_id)
 
 @bp.route('/', methods=['GET'])
 @login_required
 def view_expenses():
-    expenses = Expense.query.filter(
-        (Expense.created_by == current_user.id) |
-        (Expense.splits.any(ExpenseSplit.user_id == current_user.id))
-    ).order_by(Expense.date.desc()).all()
-    return render_template('expense/list.html', expenses=expenses)
+    group_id = request.args.get('group_id')
+    if group_id:
+        group = Group.query.get_or_404(group_id)
+        if not any(member.user_id == current_user.id for member in group.members):
+            flash('You do not have permission to view expenses for this group.', 'error')
+            return redirect(url_for('group.list_groups'))
+        expenses = Expense.query.filter_by(group_id=group_id).order_by(Expense.date.desc()).all()
+    else:
+        # Show expenses from all groups the user is a member of
+        group_ids = [m.group_id for m in current_user.group_memberships]
+        expenses = Expense.query.filter(Expense.group_id.in_(group_ids)).order_by(Expense.date.desc()).all()
+    
+    return render_template('expense/list.html', expenses=expenses, group_id=group_id)
 
 @bp.route('/<int:expense_id>', methods=['GET'])
 @login_required

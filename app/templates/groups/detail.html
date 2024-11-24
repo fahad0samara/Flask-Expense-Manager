@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>{{ group.name }}</h1>
+            {% if group.description %}
+            <p class="text-muted">{{ group.description }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            {% set is_admin = false %}
+            {% for member in group.members %}
+                {% if member.user_id == current_user.id and member.is_admin %}
+                    {% set is_admin = true %}
+                {% endif %}
+            {% endfor %}
+            {% if is_admin %}
+                <a href="{{ url_for('group.edit_group', group_id=group.id) }}" class="btn btn-primary">Edit Group</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Members</h5>
+                    {% if is_admin %}
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+                        Add Member
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for membership in group.members %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                {{ membership.user.name }}
+                                {% if membership.is_admin %}
+                                <span class="badge bg-primary ms-2">Admin</span>
+                                {% endif %}
+                            </div>
+                            {% if is_admin and membership.user_id != current_user.id %}
+                            <form action="{{ url_for('group.remove_member', group_id=group.id, user_id=membership.user_id) }}" method="POST" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this member?')">
+                                    Remove
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('expense.add_expense', group_id=group.id) }}" class="btn btn-primary">Add Expense</a>
+                        <a href="{{ url_for('expense.view_expenses', group_id=group.id) }}" class="btn btn-outline-primary">View Expenses</a>
+                        <a href="{{ url_for('settlement.group_settlements', group_id=group.id) }}" class="btn btn-outline-success">View Settlements</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+{% if is_admin %}
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMemberModalLabel">Add Member</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('group.add_member', group_id=group.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="form-text">Enter the email address of the user you want to add to the group.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Member</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

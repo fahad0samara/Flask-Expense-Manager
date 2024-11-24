@@ -9,7 +9,7 @@ bp = Blueprint('group', __name__)
 @login_required
 def list_groups():
     groups = Group.query.filter(Group.members.any(id=current_user.id)).all()
-    return render_template('group/list.html', groups=groups)
+    return render_template('groups/list.html', groups=groups)
 
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -34,16 +34,16 @@ def create_group():
         flash('Group created successfully!', 'success')
         return redirect(url_for('group.view_group', group_id=group.id))
     
-    return render_template('group/create.html')
+    return render_template('groups/create.html')
 
 @bp.route('/<int:group_id>', methods=['GET'])
 @login_required
 def view_group(group_id):
     group = Group.query.get_or_404(group_id)
-    if not any(member.id == current_user.id for member in group.members):
+    if not any(member.user_id == current_user.id for member in group.members):
         flash('You do not have permission to view this group.', 'error')
         return redirect(url_for('group.list_groups'))
-    return render_template('group/detail.html', group=group)
+    return render_template('groups/detail.html', group=group)
 
 @bp.route('/<int:group_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -61,7 +61,7 @@ def edit_group(group_id):
         flash('Group updated successfully!', 'success')
         return redirect(url_for('group.view_group', group_id=group.id))
     
-    return render_template('group/edit.html', group=group)
+    return render_template('groups/edit.html', group=group)
 
 @bp.route('/<int:group_id>/members/add', methods=['POST'])
 @login_required
@@ -78,7 +78,7 @@ def add_member(group_id):
         flash('User not found.', 'error')
         return redirect(url_for('group.view_group', group_id=group.id))
     
-    if any(member.id == user.id for member in group.members):
+    if any(member.user_id == user.id for member in group.members):
         flash('User is already a member of this group.', 'error')
         return redirect(url_for('group.view_group', group_id=group.id))
     
