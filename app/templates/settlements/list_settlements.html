@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Settlements</h2>
+        <a href="{{ url_for('settlements.create_settlement') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Settlement
+        </a>
+    </div>
+    
+    {% if settlements %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Amount</th>
+                        <th>Group</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for settlement in settlements %}
+                    <tr>
+                        <td>{{ settlement.date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ settlement.payer.username }}</td>
+                        <td>{{ settlement.receiver.username }}</td>
+                        <td>{{ settlement.amount }}</td>
+                        <td>{{ settlement.group.name if settlement.group else '-' }}</td>
+                        <td>
+                            <span class="badge bg-{{ {
+                                'pending': 'warning',
+                                'completed': 'success',
+                                'cancelled': 'danger'
+                            }[settlement.status] }}">
+                                {{ settlement.status.title() }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if settlement.status == 'pending' %}
+                            <form method="POST" action="{{ url_for('settlements.update_settlement_status', settlement_id=settlement.id) }}" class="d-inline">
+                                <input type="hidden" name="status" value="completed">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check"></i> Complete
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('settlements.update_settlement_status', settlement_id=settlement.id) }}" class="d-inline">
+                                <input type="hidden" name="status" value="cancelled">
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <h4 class="text-muted mb-3">No settlements found</h4>
+            <p class="text-muted">Create a new settlement to start tracking payments between users.</p>
+            <a href="{{ url_for('settlements.create_settlement') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create Settlement
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

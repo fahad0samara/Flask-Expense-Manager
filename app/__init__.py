@@ -30,11 +30,13 @@ def create_app():
     login_manager.login_view = 'auth.login'
     
     # Import and register blueprints
-    from .routes import auth, main, expenses, groups
+    from .routes import auth, main, expenses, groups, profile, settlements
     app.register_blueprint(auth.bp)
     app.register_blueprint(main.bp)
     app.register_blueprint(expenses.bp)
     app.register_blueprint(groups.bp)
+    app.register_blueprint(profile.bp)
+    app.register_blueprint(settlements.bp)
     
     # Create database tables
     with app.app_context():
