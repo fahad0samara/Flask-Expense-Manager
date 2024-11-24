@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Create Group{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h2>Create New Group</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Group Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Group</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

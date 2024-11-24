@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h2>Add New Expense</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <input type="text" class="form-control" id="description" name="description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="group_id" class="form-label">Group (Optional)</label>
+                        <select class="form-select" id="group_id" name="group_id">
+                            <option value="">-- Select Group --</option>
+                            {% for group in groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="split_type" class="form-label">Split Type</label>
+                        <select class="form-select" id="split_type" name="split_type" required>
+                            <option value="equal">Equal Split</option>
+                            <option value="percentage" disabled>Percentage Split (Coming Soon)</option>
+                            <option value="custom" disabled>Custom Split (Coming Soon)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

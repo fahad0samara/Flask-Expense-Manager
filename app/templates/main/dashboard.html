@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Welcome, {{ user.username }}!</h2>
+        
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Your Groups</h4>
+                <a href="{{ url_for('groups.create_group') }}" class="btn btn-sm btn-primary">Create Group</a>
+            </div>
+            <div class="card-body">
+                {% if groups %}
+                    <div class="list-group">
+                        {% for group in groups %}
+                            <a href="{{ url_for('groups.group_details', group_id=group.id) }}" class="list-group-item list-group-item-action">
+                                {{ group.name }}
+                                <small class="text-muted d-block">{{ group.description }}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">You haven't joined any groups yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4>Recent Expenses</h4>
+                <a href="{{ url_for('expenses.add_expense') }}" class="btn btn-sm btn-primary">Add Expense</a>
+            </div>
+            <div class="card-body">
+                {% if recent_expenses %}
+                    <div class="list-group">
+                        {% for expense in recent_expenses %}
+                            <a href="{{ url_for('expenses.expense_details', expense_id=expense.id) }}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ expense.description }}</h5>
+                                    <small class="text-muted">${{ "%.2f"|format(expense.amount) }}</small>
+                                </div>
+                                <p class="mb-1">Paid by {{ expense.payer.username }}</p>
+                                <small class="text-muted">{{ expense.date.strftime('%B %d, %Y') }}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No recent expenses.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>Account Summary</h4>
+            </div>
+            <div class="card-body">
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Groups:</strong> {{ groups|length }}</p>
+                <p><strong>Total Expenses:</strong> {{ recent_expenses|length }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

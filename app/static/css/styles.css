@@ -1,0 +1,75 @@
+/* General Styles */
+body {
+    background-color: #f8f9fa;
+}
+
+/* Navbar Styles */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    color: #28a745 !important;
+}
+
+/* Card Styles */
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+
+/* Form Styles */
+.form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-primary:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* List Group Styles */
+.list-group-item {
+    border: none;
+    border-radius: 4px;
+    margin-bottom: 5px;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Alert Styles */
+.alert {
+    border: none;
+    border-radius: 4px;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    transition: transform 0.2s;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Expense Amount */
+.expense-amount {
+    font-weight: bold;
+    color: #28a745;
+}
