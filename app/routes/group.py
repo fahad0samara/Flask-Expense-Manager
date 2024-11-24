@@ -21,12 +21,12 @@ def create_group():
         group = Group(
             name=name,
             description=description,
-            created_by=current_user.id
+            creator_id=current_user.id
         )
         
-        # Add creator as a member
-        membership = GroupMembership(user_id=current_user.id, is_admin=True)
-        group.memberships.append(membership)
+        # Add creator as a member and admin
+        membership = GroupMembership(user=current_user, group=group, is_admin=True)
+        group.members.append(membership)
         
         db.session.add(group)
         db.session.commit()
@@ -49,7 +49,7 @@ def view_group(group_id):
 @login_required
 def edit_group(group_id):
     group = Group.query.get_or_404(group_id)
-    if not any(membership.user_id == current_user.id and membership.is_admin for membership in group.memberships):
+    if not any(membership.user_id == current_user.id and membership.is_admin for membership in group.members):
         flash('You do not have permission to edit this group.', 'error')
         return redirect(url_for('group.view_group', group_id=group.id))
     
@@ -67,7 +67,7 @@ def edit_group(group_id):
 @login_required
 def add_member(group_id):
     group = Group.query.get_or_404(group_id)
-    if not any(membership.user_id == current_user.id and membership.is_admin for membership in group.memberships):
+    if not any(membership.user_id == current_user.id and membership.is_admin for membership in group.members):
         flash('You do not have permission to add members to this group.', 'error')
         return redirect(url_for('group.view_group', group_id=group.id))
     
@@ -83,7 +83,7 @@ def add_member(group_id):
         return redirect(url_for('group.view_group', group_id=group.id))
     
     membership = GroupMembership(user_id=user.id)
-    group.memberships.append(membership)
+    group.members.append(membership)
     db.session.commit()
     
     flash('Member added successfully!', 'success')
@@ -93,13 +93,13 @@ def add_member(group_id):
 @login_required
 def remove_member(group_id, user_id):
     group = Group.query.get_or_404(group_id)
-    if not any(membership.user_id == current_user.id and membership.is_admin for membership in group.memberships):
+    if not any(membership.user_id == current_user.id and membership.is_admin for membership in group.members):
         flash('You do not have permission to remove members from this group.', 'error')
         return redirect(url_for('group.view_group', group_id=group.id))
     
     membership = GroupMembership.query.filter_by(group_id=group_id, user_id=user_id).first_or_404()
     
-    if membership.is_admin and len([m for m in group.memberships if m.is_admin]) == 1:
+    if membership.is_admin and len([m for m in group.members if m.is_admin]) == 1:
         flash('Cannot remove the last admin from the group.', 'error')
         return redirect(url_for('group.view_group', group_id=group.id))
     
